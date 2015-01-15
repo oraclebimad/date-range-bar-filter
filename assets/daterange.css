@@ -1,0 +1,44 @@
+svg {
+  font: 10px Hervetica, sans-serif;
+}
+
+.area {
+  fill: steelblue;
+  clip-path: url(#clip);
+}
+
+.dateRange.barChart {
+  fill: #31a354;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+ }
+
+ .brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+  }
+
+  .grid-background {
+   fill: #ddd;
+  }
+
+ .x.grid line,
+ .x.grid path {
+    fill: none;
+    stroke: #fff;
+    shape-rendering: crispEdges;
+ }
+
+.x.grid .minor.tick line {
+   stroke-opacity: .5;
+ }
+
+.x.grid{
+  fill: #ddd;
+}
