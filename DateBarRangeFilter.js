@@ -14,7 +14,7 @@
     {key: "width", label: "Width", type: "length", value: "540px"},
     {key: "height", label: "Height", type: "length", value: "100px"},
     {key: "color", label:"color", type: "color", value:"#31a354"},
-  {key: "timeinterval", label:"time interval", type:"lov", value:'year',
+  {key: "timeinterval", label:"time interval", type:"lov", value:'month',
       options:[{value:"day", label:"day"},{value:"month",label:"month"},{value:"year",label:"year"}]}
   ],
   
@@ -321,31 +321,39 @@
 
 function brushended() {
   //console.log("In Brush..");
+  var _id = containerElem.id.replace("_content","");
+  
   _this._brushCleaned = false;
   var extent0 = brush.extent();
   var extent1 = extent0.map(d3.time.day.round);
-
   // if empty when rounded, use floor & ceil instead
   if (extent1[0] >= extent1[1]) {
     extent1[0] = d3.time.day.floor(extent0[0]);
     extent1[1] = d3.time.day.ceil(extent0[1]);
   }
-  if(_this.minVal === extent1[0].toISOString() && _this.maxVal === extent1[1].toISOString()){
-    //console.log("ignoring brush..");
-    _this._brushCleaned = false;
-    return;//only transition after input
+  if(!_this.minVal){
+    _this.minVal = dateArray[0].date.toISOString();
   }
-  _this.minVal = extent1[0].toISOString();
-  _this.maxVal = extent1[1].toISOString();
-  if (_this.isSDK()) {
-       //xdo.api.handleClickEvent({id: context.id, filter: filters});
-       // no filter at design time may be
-  } else {
-     if (_this.isViewer()) {
-        if (_this.filter) {
+  if(!_this.maxVal){
+    _this.minVal = dateArray[dateArray.length-1].date.toISOString();
+  }
+  
+  // in case of click, extent difference is one day
+  if(_this._getDateDiff(extent1[1],extent1[0])===1){ // it means click
+    _this._brushCleaned = true;
+    if (!_this.isSDK() && _this.isViewer()) {
+      if (_this.filter) {
+        xdo.app.viewer.GlobalFilter.removeFilter(_id, _this.filter.id, false); // compId, filterId, noreload
+        _this.filter = null;
+      }
+    }
+  } else if (_this.minVal !== extent1[0].toISOString() || _this.maxVal !== extent1[1].toISOString()) { // brush range is changed
+    _this.minVal = extent1[0].toISOString();
+    _this.maxVal = extent1[1].toISOString();
+    if (!_this.isSDK() && _this.isViewer()) {
+       if (_this.filter) {
           //console.log("In Brushed:Removing old filter..:"+_this.filter.toString());
-          xdo._supernastymarker = null;
-          xdo.app.viewer.GlobalFilter.removeFilter(containerElem.id, _this.filter.id, true); // compId, filterId, noreload
+          xdo.app.viewer.GlobalFilter.removeFilter(_id, _this.filter.id, true); // compId, filterId, noreload
         }
         xdo.require('xdo.app.viewer.components.mobile.filter.GlobalFilter');
         _this.filter = new xdo.app.viewer.components.mobile.filter.GlobalFilter();
@@ -353,11 +361,10 @@ function brushended() {
         var fieldPath = fields[0].field;
         _this.filter.fieldPath = fieldPath;
         if(!_this.filter.values){
-          _this.filter.values = [];
+            _this.filter.values = [];
         }
         _this.filter.values[0] = {"text": _this.minVal, "type": "literal"};
         _this.filter.values[1] = {"text": _this.maxVal, "type": "literal"};
-        xdo._supernastymarker = {};
         //console.log("In Brushed: Adding new filter..:"+_this.filter.toString());
         var expression = _this.filter.getExpression(true);
         var formula = new xdo.app.designer.appwidget.formula.Formula();
@@ -365,16 +372,14 @@ function brushended() {
         _this.filter.formula = formula;
         
         xdo.app.viewer.GlobalFilter.addFilter({id: containerElem.id.replace("_content",""), filter: [_this.filter]});
-    } else {
-      //console.log("In designer now. All events are ignored.");
-    }
+       }
 
+      d3.select(this).transition()
+          .call(brush.extent(extent1))
+          .call(brush.event);
+    
   }
-
-  d3.select(this).transition()
-      .call(brush.extent(extent1))
-      .call(brush.event);
-  }
+}
 
   },
   // ------------------------------------------------------------
@@ -392,21 +397,12 @@ function brushended() {
    * Refresh event handler
    */
   refresh: function (context, containerElem, data, fields, props) {
-    //console.log("begin refresh..");
-    if(this.filter && this._brushCleaned){
-      //console.log("In Refresh: removing filter..:"+this.filter.toString());
-      xdo.app.viewer.GlobalFilter.removeFilter(containerElem.id.replace('_content',''), this.filter.id, false); // compId, filterId, noreload
+    if(this.filter){
+      xdo.app.viewer.GlobalFilter.removeFilter(containerElem.id.replace('_content',''), this.filter.id, true); // compId, filterId, noreload
       this.filter = null;
-      return;
-    } else if (!this._brushCleaned) {
-      //console.log("In refresh: refresh initiated by itself. no refresh...");
-      return;
-    } else {
-     // remove everything. ugly but easy.
-     //console.log("In refresh: refresh called.");
+    }
      d3.select(containerElem).selectAll('svg').remove();
      this.render(context, containerElem, data, fields, props);
-    }
   }
 
 }
