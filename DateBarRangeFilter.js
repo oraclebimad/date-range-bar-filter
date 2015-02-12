@@ -13,7 +13,7 @@
   properties: [
     {key: "width", label: "Width", type: "length", value: "540px"},
     {key: "height", label: "Height", type: "length", value: "100px"},
-    {key: "color", label:"color", type: "color", value:"#31a354"},
+    {key: "color", label:"color", type: "color", value:"#00bfff"},
   {key: "timeinterval", label:"time interval", type:"lov", value:'month',
       options:[{value:"day", label:"day"},{value:"month",label:"month"},{value:"year",label:"year"}]}
   ],
